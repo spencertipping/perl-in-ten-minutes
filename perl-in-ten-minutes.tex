@@ -1,0 +1,60 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,amssymb,amsthm,pxfonts,listings,color}
+\usepackage[colorlinks]{hyperref}
+\definecolor{gray}{rgb}{0.6,0.6,0.6}
+
+\usepackage{caption}
+\DeclareCaptionFormat{listing}{\llap{\color{gray}#1\hspace{10pt}}\tt{}#3}
+\captionsetup[lstlisting]{format=listing, singlelinecheck=false, margin=0pt, font={bf}}
+
+\lstset{columns=fixed,basicstyle={\tt},numbers=left,firstnumber=auto,basewidth=0.5em,showstringspaces=false,numberstyle={\color{gray}\scriptsize}}
+
+\newcommand{\Ref}[2]{\hyperref[#2]{#1 \ref*{#2}}}
+
+% Shamelessly swiped from
+% http://compgroups.net/comp.text.tex/using-ref-and-label-so-that-ref-points-to-the-l/245066
+\makeatletter
+\newcommand*{\Label}[2]{%
+  \@bsphack
+  \begingroup
+    \label{#1-original}%
+    \def\@currentlabel{#2}%
+    \label{#1}%
+  \endgroup
+  \@esphack
+}
+\makeatother
+
+
+\lstnewenvironment{asmcode}       {}{}
+\lstnewenvironment{cppcode}       {\lstset{language=c++}}{}
+\lstnewenvironment{javacode}      {\lstset{language=java}}{}
+\lstnewenvironment{javascriptcode}{}{}
+\lstnewenvironment{htmlcode}      {\lstset{language=html}}{}
+\lstnewenvironment{perlcode}      {\lstset{language=perl}}{}
+\lstnewenvironment{rubycode}      {\lstset{language=ruby}}{}
+\lstnewenvironment{pythoncode}    {\lstset{language=python}}{}
+
+\lstnewenvironment{resourcecode}{}{}
+
+\title{Perl in Ten Minutes}
+\author{Spencer Tipping}
+
+\begin{document}
+\maketitle
+\tableofcontents
+
+\section{Perl is not a good language}
+
+Python, Ruby, and even Javascript were designed to be good languages -- and
+just as importantly, to {\em feel} like good languages. Each embraces the
+politically correct notion that values are objects by default, distances itself
+from UNIX-as-a-ground-truth, and has a short history that it's willing to
+revise or forget. These languages are convenient and inoffensive by principle
+because that was the currency that made them viable.
+
+Perl is different.
+
+
+\end{document}
