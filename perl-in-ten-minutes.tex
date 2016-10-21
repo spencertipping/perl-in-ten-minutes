@@ -52,9 +52,34 @@ just as importantly, to {\em feel} like good languages. Each embraces the
 politically correct notion that values are objects by default, distances itself
 from UNIX-as-a-ground-truth, and has a short history that it's willing to
 revise or forget. These languages are convenient and inoffensive by principle
-because that was the currency that made them viable.
+because that was the currency that made them viable. Perl is different. In
+today's world it's a neo-noir character dropped into a Superman comic; but
+that's only true because it changed our collective notion of what an accessible
+scripting language should look like.
 
-Perl is different.
+People often accuse Perl of having no design principles; it's ``line noise,''
+pragmatic over consistent. This is superficially true, but at a deeper level
+Perl is uncompromisingly principled in ways that most other languages aren't.
+Perl isn't good; it's complicated, and if you don't know it yet, it will
+probably change your idea of what a good language should be.\footnote{Along
+these lines, I continue to insist that Perl 6 never happened and never will. In
+the unlikely event that Perl 5 dies out to Perl 6 I'm jumping ship.}
+
+\section{The sigil problem}
+
+One of the first objections to Perl is silliness like this:
+
+\begin{perlcode}
+my $x = 5;              # $x is a scalar
+my @x = (1, 2, 3);      # @x is an array (which has nothing to do with $x)
+print $x[0];            # $x[0] is the first element of @x; why not @x[0]?
+\end{perlcode}
+
+Despite appearances, this is a great feature -- and in order to explain why, I
+first need to describe how Perl looks at various types of data.
+
+\subsection{Scalars, lists, and hashes}
+
 
 
 \end{document}
