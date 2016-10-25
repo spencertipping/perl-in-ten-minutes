@@ -1,14 +1,12 @@
 \documentclass{article}
 \usepackage[utf8]{inputenc}
-\usepackage{amsmath,amssymb,amsthm,pxfonts,listings,color}
+\usepackage{amsmath,amssymb,amsthm,pxfonts,color}
 \usepackage[colorlinks]{hyperref}
 \definecolor{gray}{rgb}{0.6,0.6,0.6}
 
 \usepackage{caption}
 \DeclareCaptionFormat{listing}{\llap{\color{gray}#1\hspace{10pt}}\tt{}#3}
 \captionsetup[lstlisting]{format=listing, singlelinecheck=false, margin=0pt, font={bf}}
-
-\lstset{columns=fixed,basicstyle={\tt},numbers=left,firstnumber=auto,basewidth=0.5em,showstringspaces=false,numberstyle={\color{gray}\scriptsize}}
 
 \newcommand{\Ref}[2]{\hyperref[#2]{#1 \ref*{#2}}}
 
@@ -26,18 +24,6 @@
 }
 \makeatother
 
-
-\lstnewenvironment{asmcode}       {}{}
-\lstnewenvironment{cppcode}       {\lstset{language=c++}}{}
-\lstnewenvironment{javacode}      {\lstset{language=java}}{}
-\lstnewenvironment{javascriptcode}{}{}
-\lstnewenvironment{htmlcode}      {\lstset{language=html}}{}
-\lstnewenvironment{perlcode}      {\lstset{language=perl}}{}
-\lstnewenvironment{rubycode}      {\lstset{language=ruby}}{}
-\lstnewenvironment{pythoncode}    {\lstset{language=python}}{}
-
-\lstnewenvironment{resourcecode}{}{}
-
 \title{Perl in Ten Minutes}
 \author{Spencer Tipping}
 
@@ -52,12 +38,18 @@ just as importantly, to {\em feel} like good languages. Each embraces the
 politically correct notion that values are objects by default, distances itself
 from UNIX-as-a-ground-truth, and has a short history that it's willing to
 revise or forget. These languages are convenient and inoffensive by principle
-because that was the currency that made them viable. Perl is different. In
-today's world it's a neo-noir character dropped into a Superman comic; but
-that's only true because it changed our collective notion of what an accessible
-scripting language should look like.
+because that was the currency that made them viable.
 
-People often accuse Perl of having no design principles; it's ``line noise,''
+Perl is different.
+
+In today's world it's a neo-noir character dropped into a Superman comic; but
+that's only true because it changed our collective notion of what an accessible
+scripting language should look like.\footnote{To get a sense of the historical
+context it came from, consider that it and TCL were contemporaries and that
+both Python and Ruby came late enough to inherit a strong OO influence from
+Java. TCL was a brilliant language in its own way, but even more misunderstood
+than Perl -- and it didn't go on to shape the future the way Perl did.} People
+often accuse Perl of having no design principles; it's ``line noise,''
 pragmatic over consistent. This is superficially true, but at a deeper level
 Perl is uncompromisingly principled in ways that most other languages aren't.
 Perl isn't good; it's complicated, and if you don't know it yet, it will
@@ -65,21 +57,136 @@ probably change your idea of what a good language should be.\footnote{Along
 these lines, I continue to insist that Perl 6 never happened and never will. In
 the unlikely event that Perl 5 dies out to Perl 6 I'm jumping ship.}
 
-\section{The sigil problem}
+\section{\tt uncons}
 
-One of the first objections to Perl is silliness like this:
+Perl is one of the very few languages that gets this right, and, I think, the
+only such mainstream language that isn't stack-based.\footnote{That is, it
+supports applicative syntax -- though you can also use Perl as a stack language
+if you're determined to. If you have no idea what any of this is, you should
+check out Joy and FORTH (in that order unless you like assembly code) because
+they will change your world.}
 
-\begin{perlcode}
-my $x = 5;              # $x is a scalar
-my @x = (1, 2, 3);      # @x is an array (which has nothing to do with $x)
-print $x[0];            # $x[0] is the first element of @x; why not @x[0]?
-\end{perlcode}
+Here's the idea. We've got a {\tt cons} function and we want to write its
+inverse, {\tt uncons}. How would we do it? Let's start in Ruby, where we can
+get close.
 
-Despite appearances, this is a great feature -- and in order to explain why, I
-first need to describe how Perl looks at various types of data.
+\begin{verbatim}
+def cons(h, t)
+  Cons.new(h, t)
+end
+def uncons(c)
+  [c.head, c.tail]
+end
 
-\subsection{Scalars, lists, and hashes}
+c = cons 3, 4
+x, y = uncons c
+\end{verbatim}
 
+But {\tt uncons} isn't a true inverse:
 
+\begin{verbatim}
+c2 = cons(uncons(c))            # this dies
+c2 = cons(*uncons(c))           # we have to do this instead
+\end{verbatim}
+
+And this illustrates a fundamental asymmetry in Ruby and in most applicative
+languages:~a function can take multiple arguments, but can return only
+one.\footnote{This is even true in most Scheme implementations because
+arity-checking happens before CPS-conversion: \\
+{\tt
+(define uncons (lambda (c) (call/cc (lambda (k) (k (head c) (tail c)))))) \\
+(define c2 (cons (uncons c)))   ; scheme dies here despite its validity in CPS
+}}
+If you think about how function calling works, of course, there's no
+particularly good reason it needs to work this way:~functions are just
+transformations against the call stack, and you could easily define a calling
+convention that allowed a function to push multiple return values. And that's
+exactly what Perl does.
+
+\begin{verbatim}
+sub cons {
+  {head => $_[0], tail => $_[1]}
+}
+sub uncons {
+  my ($c) = @_;
+  ($$c{head}, $$c{tail});
+}
+$c = cons 3, 4;
+($x, $y) = uncons $c;
+$c2 = cons uncons $c;           # this works
+\end{verbatim}
+
+We have a problem, though:~suppose we actually want a function that returns an
+array, not multiple values. Perl seems willing to blur the line between those
+two concepts. In practice that's because in Perl there's no difference:~arrays
+aren't things, they really are multiple values:
+
+\begin{verbatim}
+$c = cons 3, 4;
+@returned = uncons $c;
+$c2 = cons @returned;           # this works
+\end{verbatim}
+
+So Perl promotes arrays and hashes into language-level constructs because these
+things have language-level semantics that their counterparts in Ruby and Python
+don't. Having these semantics wouldn't be possible if Perl modeled these things
+as objects.\footnote{The obvious question of arrays-within-arrays is handled by
+{\em references}, which are single values that refer to complex data
+structures. There's no syntactic ambiguity around them because they must be
+dereferenced.}
+
+\section{Sigils}
+
+If \verb|@xs| is an array, you refer to its first element as \verb|$xs[0]|. To
+explain why this works and why it's a feature, I first need to describe how
+Perl looks at these two expressions; and before I get to that, I want to talk
+about Perl's symbol table.
+
+Perl lets you define multiple variables with the same name: \verb|@x| and
+\verb|%x| are two completely different variables. Because they have the same
+name, though, they're stored in the same location in the symbol table:~both are
+accessible using \verb|${main::}{x}| (that is, the {\tt x} element of the {\tt
+main::} hash). That hashtable value is a {\em typeglob}, which can be
+dereferenced as a scalar, an array, a hash, or a function:
+
+\begin{verbatim}
+$xs = 5;
+@xs = 1..10;
+%xs = (foo => 1, bar => 2);
+*xs = sub {"hi"};
+
+my $v = ${main::}{xs};          # this is a typeglob
+print $$v;                      # the scalar slot: prints 5
+print @$v;                      # the array slot: prints 12345678910
+print %$v;                      # the hash slot: prints foo1bar2
+print &$v;                      # the code slot: prints hi
+\end{verbatim}
+
+(This insane detour has a purpose, I promise. Hang in there.)
+
+Ok, now let's talk about what Perl looks at when it's figuring out which of
+these typeglob entries you're working with. Let's say you've got a mystery
+character \verb|?| that can be any of \verb|$|, \verb|@|, or \verb|%|, but Perl
+doesn't know which. Writing \verb|?xs| is obviously ambiguous, but writing
+\verb|?xs[0]| isn't; the reason is that square brackets only work on arrays.
+\verb|?xs{foo}| also isn't ambiguous:~curly braces only work on hashes.
+
+So Perl is in an interesting position:~it needs {\em some} leading character,
+but it doesn't matter which one. Rather than having you repeat information Perl
+already knows, it instead lets you specify something it doesn't know:~the
+context of the thing inside the square or curly brackets.
+
+\begin{verbatim}
+$ perl -de1
+perl> @xs = 'a'..'j';
+perl> p @xs
+abcdefghij
+perl> p $xs[0]                  # pull one value: scalar context
+a
+perl> p @xs[1..5]               # pull multiple values: list context
+bcdef
+perl> p %xs[1..4]               # pull keys+values: list context
+1b2c3d4e
+\end{verbatim}
 
 \end{document}
