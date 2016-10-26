@@ -142,9 +142,9 @@ explain why this works and why it's a feature, I first need to describe how
 Perl looks at these two expressions; and before I get to that, I want to talk
 about Perl's symbol table.
 
-Perl lets you define multiple variables with the same name: \verb|@x| and
-\verb|%x| are two completely different variables. Because they have the same
-name, though, they're stored in the same location in the symbol table:~both are
+Perl lets you define multiple variables with the same name:~\verb|@x| and
+\verb|%x| are two completely different values. Because they have the same name,
+though, they're stored in the same location in the symbol table; both are
 accessible using \verb|${main::}{x}| (that is, the {\tt x} element of the {\tt
 main::} hash). That hashtable value is a {\em typeglob}, which can be
 dereferenced as a scalar, an array, a hash, or a function:
@@ -169,24 +169,28 @@ these typeglob entries you're working with. Let's say you've got a mystery
 character \verb|?| that can be any of \verb|$|, \verb|@|, or \verb|%|, but Perl
 doesn't know which. Writing \verb|?xs| is obviously ambiguous, but writing
 \verb|?xs[0]| isn't; the reason is that square brackets only work on arrays.
-\verb|?xs{foo}| also isn't ambiguous:~curly braces only work on hashes.
+\verb|?xs{foo}| also isn't ambiguous because curly braces only work on hashes.
 
 So Perl is in an interesting position:~it needs {\em some} leading character,
 but it doesn't matter which one. Rather than having you repeat information Perl
-already knows, it instead lets you specify something it doesn't know:~the
-context of the thing inside the square or curly brackets.
+already knows, it instead lets you specify something it doesn't know:~the type
+of return value you want.
 
 \begin{verbatim}
 $ perl -de1
 perl> @xs = 'a'..'j';
 perl> p @xs
 abcdefghij
-perl> p $xs[0]                  # pull one value: scalar context
+perl> p $xs[0]                  # get a scalar
 a
-perl> p @xs[1..5]               # pull multiple values: list context
+perl> p @xs[1..5]               # get an array
 bcdef
-perl> p %xs[1..4]               # pull keys+values: list context
+perl> p %xs[1..4]               # get a hash of key/value pairs
 1b2c3d4e
 \end{verbatim}
+
+\section{Regular expressions}
+
+
 
 \end{document}
